@@ -2,15 +2,19 @@ import "dotenv/config"
 import express from "express"
 import mongoose from "mongoose"
 import cors from "cors"
+import dns from "node:dns"
 import PostRouter from "./routes/Posts.js"
 import GenerateRouter from "./routes/Generate.js";
+
+// Workaround for broken DNS resolvers on some networks
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const app = express()
 app.use(express.json({limit: "50mb"}))
 app.use(express.urlencoded({ extended: true}))
 
 app.use(cors({
-  origin: 'https://pixelforge-ai.netlify.app',
+  origin: ['https://pixelforge-ai.netlify.app', 'http://localhost:5173'],
   credentials: true // if you're using cookies/auth headers
 }));
 
@@ -36,12 +40,15 @@ app.get("/",(req,res)=>{
 
 //connect to mongodb
 const ConnectDB = async ()=>{
+    if (!process.env.MONGO_URI) {
+        console.log("MONGO_URI not set - skipping DB connection (image generation still works)")
+        return
+    }
     try{
         const conn = await mongoose.connect(process.env.MONGO_URI)
         console.log(`MongoDB connected: ${conn.connection.host}`)
     }catch(err){
-        console.log(err)
-        process.exit(1)
+        console.log("MongoDB connection failed (image generation still works):", err.message)
     }
 }
 
@@ -72,6 +79,7 @@ app.use((err, req, res, next) => {
     return res.status(status).json({
         success: false,
         status,
-        message
+        message,
+        data: err.data || undefined
     })
 });

@@ -5,6 +5,7 @@ import Button from "./Button";
 import TextInput from "./TextInput";
 import { AutoAwesome, CreateRounded } from "@mui/icons-material";
 import { CreatePost, generateAIImage } from "../api";
+import SafetyErrorCard from "./SafetyErrorCard";
 
 const Form = styled.div`
   flex: 1;
@@ -83,7 +84,7 @@ const GenerateImageForm = ({
         setGenerateImageLoading(false);
       })
       .catch((error) => {
-        setError(error?.response?.data?.message || "Failed to generate image");
+        setError(error?.response?.data || { message: "Failed to generate image" });
         setGenerateImageLoading(false);
       });
   };
@@ -97,12 +98,12 @@ const GenerateImageForm = ({
       photo: post.photo,
       filePath: post.filePath
     })
-      .then((res) => {
+      .then(() => {
         setCreatePostLoading(false);
         navigate("/");
       })
       .catch((error) => {
-        setError(error?.response?.data?.message || "Failed to create post");
+        setError(error?.response?.data || { message: "Failed to create post" });
         setCreatePostLoading(false);
       });
   };
@@ -131,7 +132,27 @@ const GenerateImageForm = ({
           value={post.prompt}
           handelChange={(e) => setPost({ ...post, prompt: e.target.value })}
         />
-        {error && <div style={{ color: "red" }}>{error}</div>}
+        {error?.data?.suggestions ? (
+          <SafetyErrorCard
+            error={error}
+            onSelect={(prompt) => setPost({ ...post, prompt })}
+          />
+        ) : (
+          error?.message && (
+            <div
+              style={{
+                color: "#ff6b6b",
+                fontSize: "13px",
+                padding: "10px 12px",
+                border: "1px solid rgba(255, 107, 107, 0.3)",
+                borderRadius: "12px",
+                background: "rgba(255, 107, 107, 0.08)",
+              }}
+            >
+              {error.message}
+            </div>
+          )
+        )}
         ** You can post the AI Generated Image to the Community **
       </Body>
       <Actions>

@@ -1,6 +1,6 @@
 import axios from "axios"
 const API = axios.create({
-    baseURL: "https://pixelforge-h26i.onrender.com/api"
+    baseURL: "http://localhost:4000/api"
 })
 export const GetPosts = async () => {
     return await API.get("/post")
